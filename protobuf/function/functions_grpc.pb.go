@@ -23,11 +23,9 @@ const _ = grpc.SupportPackageIsVersion7
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
 type GeneratorClient interface {
 	// generator function
-	QueryData(ctx context.Context, in *GeneratorRequest, opts ...grpc.CallOption) (*Drop, error)
+	QueryData(ctx context.Context, in *GeneratorRequest, opts ...grpc.CallOption) (*DataSet, error)
 	// generator function
 	SubscribeData(ctx context.Context, in *GeneratorRequest, opts ...grpc.CallOption) (Generator_SubscribeDataClient, error)
-	// generator function
-	Probe(ctx context.Context, in *ProbeRequest, opts ...grpc.CallOption) (*ProbeResponse, error)
 }
 
 type generatorClient struct {
@@ -38,8 +36,8 @@ func NewGeneratorClient(cc grpc.ClientConnInterface) GeneratorClient {
 	return &generatorClient{cc}
 }
 
-func (c *generatorClient) QueryData(ctx context.Context, in *GeneratorRequest, opts ...grpc.CallOption) (*Drop, error) {
-	out := new(Drop)
+func (c *generatorClient) QueryData(ctx context.Context, in *GeneratorRequest, opts ...grpc.CallOption) (*DataSet, error) {
+	out := new(DataSet)
 	err := c.cc.Invoke(ctx, "/functions.Generator/QueryData", in, out, opts...)
 	if err != nil {
 		return nil, err
@@ -63,7 +61,7 @@ func (c *generatorClient) SubscribeData(ctx context.Context, in *GeneratorReques
 }
 
 type Generator_SubscribeDataClient interface {
-	Recv() (*Drop, error)
+	Recv() (*DataSet, error)
 	grpc.ClientStream
 }
 
@@ -71,21 +69,12 @@ type generatorSubscribeDataClient struct {
 	grpc.ClientStream
 }
 
-func (x *generatorSubscribeDataClient) Recv() (*Drop, error) {
-	m := new(Drop)
+func (x *generatorSubscribeDataClient) Recv() (*DataSet, error) {
+	m := new(DataSet)
 	if err := x.ClientStream.RecvMsg(m); err != nil {
 		return nil, err
 	}
 	return m, nil
-}
-
-func (c *generatorClient) Probe(ctx context.Context, in *ProbeRequest, opts ...grpc.CallOption) (*ProbeResponse, error) {
-	out := new(ProbeResponse)
-	err := c.cc.Invoke(ctx, "/functions.Generator/Probe", in, out, opts...)
-	if err != nil {
-		return nil, err
-	}
-	return out, nil
 }
 
 // GeneratorServer is the server API for Generator service.
@@ -93,11 +82,9 @@ func (c *generatorClient) Probe(ctx context.Context, in *ProbeRequest, opts ...g
 // for forward compatibility
 type GeneratorServer interface {
 	// generator function
-	QueryData(context.Context, *GeneratorRequest) (*Drop, error)
+	QueryData(context.Context, *GeneratorRequest) (*DataSet, error)
 	// generator function
 	SubscribeData(*GeneratorRequest, Generator_SubscribeDataServer) error
-	// generator function
-	Probe(context.Context, *ProbeRequest) (*ProbeResponse, error)
 	mustEmbedUnimplementedGeneratorServer()
 }
 
@@ -105,14 +92,11 @@ type GeneratorServer interface {
 type UnimplementedGeneratorServer struct {
 }
 
-func (UnimplementedGeneratorServer) QueryData(context.Context, *GeneratorRequest) (*Drop, error) {
+func (UnimplementedGeneratorServer) QueryData(context.Context, *GeneratorRequest) (*DataSet, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method QueryData not implemented")
 }
 func (UnimplementedGeneratorServer) SubscribeData(*GeneratorRequest, Generator_SubscribeDataServer) error {
 	return status.Errorf(codes.Unimplemented, "method SubscribeData not implemented")
-}
-func (UnimplementedGeneratorServer) Probe(context.Context, *ProbeRequest) (*ProbeResponse, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method Probe not implemented")
 }
 func (UnimplementedGeneratorServer) mustEmbedUnimplementedGeneratorServer() {}
 
@@ -154,7 +138,7 @@ func _Generator_SubscribeData_Handler(srv interface{}, stream grpc.ServerStream)
 }
 
 type Generator_SubscribeDataServer interface {
-	Send(*Drop) error
+	Send(*DataSet) error
 	grpc.ServerStream
 }
 
@@ -162,26 +146,8 @@ type generatorSubscribeDataServer struct {
 	grpc.ServerStream
 }
 
-func (x *generatorSubscribeDataServer) Send(m *Drop) error {
+func (x *generatorSubscribeDataServer) Send(m *DataSet) error {
 	return x.ServerStream.SendMsg(m)
-}
-
-func _Generator_Probe_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(ProbeRequest)
-	if err := dec(in); err != nil {
-		return nil, err
-	}
-	if interceptor == nil {
-		return srv.(GeneratorServer).Probe(ctx, in)
-	}
-	info := &grpc.UnaryServerInfo{
-		Server:     srv,
-		FullMethod: "/functions.Generator/Probe",
-	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(GeneratorServer).Probe(ctx, req.(*ProbeRequest))
-	}
-	return interceptor(ctx, in, info, handler)
 }
 
 // Generator_ServiceDesc is the grpc.ServiceDesc for Generator service.
@@ -194,10 +160,6 @@ var Generator_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "QueryData",
 			Handler:    _Generator_QueryData_Handler,
-		},
-		{
-			MethodName: "Probe",
-			Handler:    _Generator_Probe_Handler,
 		},
 	},
 	Streams: []grpc.StreamDesc{
@@ -215,7 +177,7 @@ var Generator_ServiceDesc = grpc.ServiceDesc{
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
 type ProcessorClient interface {
 	// processor functions
-	ProcessDataOnce(ctx context.Context, in *Drop, opts ...grpc.CallOption) (*Drop, error)
+	ProcessDataOnce(ctx context.Context, in *DataSet, opts ...grpc.CallOption) (*DataSet, error)
 	// processor functions
 	ProcessDataStream(ctx context.Context, opts ...grpc.CallOption) (Processor_ProcessDataStreamClient, error)
 }
@@ -228,8 +190,8 @@ func NewProcessorClient(cc grpc.ClientConnInterface) ProcessorClient {
 	return &processorClient{cc}
 }
 
-func (c *processorClient) ProcessDataOnce(ctx context.Context, in *Drop, opts ...grpc.CallOption) (*Drop, error) {
-	out := new(Drop)
+func (c *processorClient) ProcessDataOnce(ctx context.Context, in *DataSet, opts ...grpc.CallOption) (*DataSet, error) {
+	out := new(DataSet)
 	err := c.cc.Invoke(ctx, "/functions.Processor/ProcessDataOnce", in, out, opts...)
 	if err != nil {
 		return nil, err
@@ -247,8 +209,8 @@ func (c *processorClient) ProcessDataStream(ctx context.Context, opts ...grpc.Ca
 }
 
 type Processor_ProcessDataStreamClient interface {
-	Send(*Drop) error
-	Recv() (*Drop, error)
+	Send(*DataSet) error
+	Recv() (*DataSet, error)
 	grpc.ClientStream
 }
 
@@ -256,12 +218,12 @@ type processorProcessDataStreamClient struct {
 	grpc.ClientStream
 }
 
-func (x *processorProcessDataStreamClient) Send(m *Drop) error {
+func (x *processorProcessDataStreamClient) Send(m *DataSet) error {
 	return x.ClientStream.SendMsg(m)
 }
 
-func (x *processorProcessDataStreamClient) Recv() (*Drop, error) {
-	m := new(Drop)
+func (x *processorProcessDataStreamClient) Recv() (*DataSet, error) {
+	m := new(DataSet)
 	if err := x.ClientStream.RecvMsg(m); err != nil {
 		return nil, err
 	}
@@ -273,7 +235,7 @@ func (x *processorProcessDataStreamClient) Recv() (*Drop, error) {
 // for forward compatibility
 type ProcessorServer interface {
 	// processor functions
-	ProcessDataOnce(context.Context, *Drop) (*Drop, error)
+	ProcessDataOnce(context.Context, *DataSet) (*DataSet, error)
 	// processor functions
 	ProcessDataStream(Processor_ProcessDataStreamServer) error
 	mustEmbedUnimplementedProcessorServer()
@@ -283,7 +245,7 @@ type ProcessorServer interface {
 type UnimplementedProcessorServer struct {
 }
 
-func (UnimplementedProcessorServer) ProcessDataOnce(context.Context, *Drop) (*Drop, error) {
+func (UnimplementedProcessorServer) ProcessDataOnce(context.Context, *DataSet) (*DataSet, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method ProcessDataOnce not implemented")
 }
 func (UnimplementedProcessorServer) ProcessDataStream(Processor_ProcessDataStreamServer) error {
@@ -303,7 +265,7 @@ func RegisterProcessorServer(s grpc.ServiceRegistrar, srv ProcessorServer) {
 }
 
 func _Processor_ProcessDataOnce_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(Drop)
+	in := new(DataSet)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
@@ -315,7 +277,7 @@ func _Processor_ProcessDataOnce_Handler(srv interface{}, ctx context.Context, de
 		FullMethod: "/functions.Processor/ProcessDataOnce",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(ProcessorServer).ProcessDataOnce(ctx, req.(*Drop))
+		return srv.(ProcessorServer).ProcessDataOnce(ctx, req.(*DataSet))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -325,8 +287,8 @@ func _Processor_ProcessDataStream_Handler(srv interface{}, stream grpc.ServerStr
 }
 
 type Processor_ProcessDataStreamServer interface {
-	Send(*Drop) error
-	Recv() (*Drop, error)
+	Send(*DataSet) error
+	Recv() (*DataSet, error)
 	grpc.ServerStream
 }
 
@@ -334,12 +296,12 @@ type processorProcessDataStreamServer struct {
 	grpc.ServerStream
 }
 
-func (x *processorProcessDataStreamServer) Send(m *Drop) error {
+func (x *processorProcessDataStreamServer) Send(m *DataSet) error {
 	return x.ServerStream.SendMsg(m)
 }
 
-func (x *processorProcessDataStreamServer) Recv() (*Drop, error) {
-	m := new(Drop)
+func (x *processorProcessDataStreamServer) Recv() (*DataSet, error) {
+	m := new(DataSet)
 	if err := x.ServerStream.RecvMsg(m); err != nil {
 		return nil, err
 	}

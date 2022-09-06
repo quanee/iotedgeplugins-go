@@ -17,27 +17,45 @@ type GeneratorServer struct {
 // generator function
 func (s *GeneratorServer) SubscribeData(req *pb.GeneratorRequest, srv pb.Generator_SubscribeDataServer) error {
 	fmt.Println("enter sub")
-	deviceDrop := pb.DeviceDrop{
-		Items: []*pb.DeviceDropItem{},
-	}
-	drop_item := pb.DeviceDropItem{
-		Properties: map[string]*pb.Properties{
-			"p1": {
-				Datatype:   pb.DataType_Int,
-				Properties: []string{"1", "2", "3", "4", "5"},
+	deviceDrop := pb.DeviceDataSet{
+		Items: []*pb.DeviceDataSetItem{
+			{
+				DeviceID: "device1",
+				Properties: map[string]*pb.Properties{
+					"dev1prop1": {
+						Datatype:   pb.DataType_Int,
+						Properties: []string{"11", "12", "13", "14", "15"},
+					},
+					"dev1prop2": {
+						Datatype:   pb.DataType_Int,
+						Properties: []string{"16", "17", "18", "19", "10"},
+					},
+				},
+			},
+			{
+				DeviceID: "device2",
+				Properties: map[string]*pb.Properties{
+					"dev2prop1": {
+						Datatype:   pb.DataType_Int,
+						Properties: []string{"21", "22", "23", "24", "25"},
+					},
+					"dev2prop2": {
+						Datatype:   pb.DataType_Int,
+						Properties: []string{"26", "27", "28", "29", "20"},
+					},
+				},
 			},
 		},
 	}
-	deviceDrop.Items = append(deviceDrop.Items, &drop_item)
 
-	ddd := &pb.Drop_DeviceDrop{
-		DeviceDrop: &deviceDrop,
+	ddd := &pb.DataSet_DeviceDataSet{
+		DeviceDataSet: &deviceDrop,
 	}
-	drop := pb.Drop{
-		Drop: ddd,
+	drop := pb.DataSet{
+		DataSet: ddd,
 	}
-	for n := 0; ; n++ {
-		drop.Timestamp = int64(n)
+	for i := 0; ; i++ {
+		drop.Timestamp = time.Now().Unix()
 
 		srv.Send(&drop)
 		time.Sleep(time.Second)
